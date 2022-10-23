@@ -1,21 +1,20 @@
 import { NextFunction, Request, Response } from "express";
-import { UserRepository } from "../database/users.repository";
+import { userList } from "../data/users.list";
 
 export const userValidator = (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  const { id } = req.params;
+  const { email } = req.body;
 
-  const user = UserRepository.some((user) => user.id == id);
+  const userName = userList.some((user) => user.email === email);
 
-  if (!user) {
+  if (userName) {
     return res.status(400).send({
       ok: false,
-      message: "User is not found!",
+      message: "Este Email já existe!",
     });
   }
-
   next();
 };

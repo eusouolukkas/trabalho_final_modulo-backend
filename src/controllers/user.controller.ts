@@ -1,21 +1,26 @@
 import { Request, Response } from "express";
-import { UserRepository } from "../database/users.repository";
+import { userList } from "../data/users.list";
 import { User } from "../models/user";
 
 export class UserController {
   public list(req: Request, res: Response) {
     try {
-      const list = new UserRepository().list();
+      let users = userList;
+
+      let usersListReturn = users.map((user) => {
+        return user.getUser();
+      });
 
       return res.status(200).send({
         ok: true,
-        message: "Listing all users",
-        data: list,
+        message: "Listando todos os usuários!",
+        data: usersListReturn,
       });
     } catch (error: any) {
       return res.status(500).send({
         ok: false,
-        message: error.toString(),
+        message: "Instabilidade no servidor!",
+        error: error.toString(),
       });
     }
   }
@@ -23,32 +28,31 @@ export class UserController {
   public login(req: Request, res: Response) {
     try {
       const { email, password } = req.body;
-      const user = new UserRepository()
-        .list()
-        .find((userItem) => userItem._email == email);
+
+      const user = userList.find(
+        (user) => user.email == email && user.pass == password
+      );
 
       if (!user) {
         return res.status(404).send({
           ok: false,
-          message: "User is not found",
-        });
-      }
-
-      if (user._pass !== password) {
-        return res.status(400).send({
-          ok: false,
-          message: "Password is not found",
+          message: "Usuário não encontrado!",
         });
       }
 
       return res.status(200).send({
         ok: true,
-        data: user?._id,
+        message: "Usuário encontrado!",
+        data: {
+          id: user.id,
+          email: user.email,
+        },
       });
-    } catch (error) {
+    } catch (error: any) {
       return res.status(500).send({
         ok: false,
-        message: error?.toString(),
+        message: "Instabilidade no servidor!",
+        error: error.toString(),
       });
     }
   }
@@ -59,38 +63,33 @@ export class UserController {
       if (!name) {
         return res.status(400).send({
           ok: false,
-          message: "Name not provided",
+          message: "Nome não inserido!",
         });
       }
 
       if (!email) {
         return res.status(400).send({
           ok: false,
-          message: "Email not provided",
+          message: "Email não inserido!",
         });
       }
 
       if (!password) {
         return res.status(400).send({
           ok: false,
-          message: "Password not provided",
+          message: "Senha não inserida!",
         });
       }
 
-      // CPF deve ser único por usuário.
-      const repository = new UserRepository();
-      let list = repository.list();
-
       const user = new User(name, email, password);
-
-      repository.create(user);
-
-      list = repository.list();
+      userList.push(user);
 
       return res.status(201).send({
         ok: true,
-        message: "User successfully created",
-        data: list,
+        message: "Usuário registrado com sucesso!",
+        id: user.id,
+        email: user.email,
+        password: user.pass,
       });
     } catch (error: any) {
       return res.status(500).send({
